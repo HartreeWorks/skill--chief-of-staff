@@ -2,6 +2,10 @@
 
 A Claude Code skill for providing comprehensive daily briefings, tracking progress against plans, and surfacing AI capability building opportunities.
 
+## Example output
+
+See [examples/sample-briefing.md](./examples/sample-briefing.md) for a sample of what a morning briefing looks like.
+
 ## Documentation
 
 See [SKILL.md](./SKILL.md) for complete documentation and usage instructions.
