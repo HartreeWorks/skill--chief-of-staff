@@ -1,0 +1,5 @@
+# State folder (contains personal briefings, logs, and data)
+state/
+
+# macOS
+.DS_Store
