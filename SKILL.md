@@ -1,6 +1,6 @@
 ---
 name: chief-of-staff
-description: This skill should be used when the user says "/cos", "/chief-of-staff", "good morning", "morning briefing", "daily briefing", "what's on today", "help me plan my day", or asks for an overview of their schedule, projects, and priorities. Provides a comprehensive daily briefing integrating calendar, week plan, project status, activity tracking, and AI capability building opportunities.
+description: This skill should be used when the user says "/cos", "/chief-of-staff", "/gm", or "gm". Provides a comprehensive daily briefing integrating calendar, week plan, project status, activity tracking, and AI capability building opportunities.
 ---
 
 # Chief of Staff
