@@ -39,9 +39,34 @@ Gather information from these sources:
 | Project memories | `/Users/ph/Documents/Projects/[folder]/MEMORY.md` | Each project's status, what's next |
 | Calendar | Google Calendar MCP (both primary and Meetings calendar) | Today's events |
 | Day tracker | `/Users/ph/Documents/day-tracker/data/daily/YYYY-MM-DD.json` | Yesterday's activity |
+| Claude Code summaries | `state/claude-code-summaries/YYYY-MM-DD.json` | Yesterday's Claude Code work |
+| Newsletter digests | `state/newsletter-digests/YYYY-MM-DD.json` | Newsletter extraction since last briefing |
 | Overnight results | `state/overnight-results/` | Results from scheduled runs |
 | Friction log | `state/friction-log.jsonl` | Recurring struggles |
 | Capability pipeline | `state/capability-pipeline.jsonl` | AI capability ideas |
+| Podcast curation | Supabase: `recommendations` table | Today's curation status |
+
+**Claude Code digest generation:**
+
+Before gathering other data, check if today's digest exists:
+
+1. Check if `state/claude-code-summaries/YYYY-MM-DD.json` exists for today
+2. If missing or stale (generated before today):
+   - Run the `/generate-chat-digest` command (from this skill's commands)
+   - Wait for completion
+   - Then proceed with the rest of the briefing
+3. If exists and current: read and include in briefing data
+
+**Newsletter digest generation:**
+
+Similarly, check if a newsletter digest exists:
+
+1. Check if `state/newsletter-digests/YYYY-MM-DD.json` exists for today
+2. If missing or stale (generated before today):
+   - Run the `/generate-newsletter-digest` command (from this skill's commands)
+   - Wait for completion
+   - Then proceed with the rest of the briefing
+3. If exists and current: read and include in briefing data
 
 **Calendar IDs:**
 - Primary: `primary`
@@ -77,6 +102,16 @@ Structure the morning briefing as follows:
 ## Overnight results
 [Summary of any overnight automation results]
 
+## Podcast curation
+[Check recommendations table - use DATABASE_URL from `/Users/ph/Documents/www/_try/2026-01-09-podcast-curator/.env.local`]
+
+```sql
+SELECT COUNT(*) FROM recommendations WHERE generated_at = CURRENT_DATE;
+```
+
+- If count > 0: "Today's podcasts ready - [N] episodes curated"
+- If count = 0: "Run `/curate-podcasts` to get today's recommendations"
+
 ## Yesterday's activity
 [Time breakdown by category from day-tracker]
 [Alignment check against week plan priorities]
@@ -95,6 +130,74 @@ Structure the morning briefing as follows:
 
 ## What can I help with?
 [Numbered list of actionable options]
+
+---
+
+## Appendix: Claude Code activity
+[Summary from state/claude-code-summaries/YYYY-MM-DD.json]
+
+**[N] chats across [M] projects** (since last briefing)
+
+Group by project type (client → personal → planning → tools). For each project, provide enough detail that Peter knows what he actually worked on:
+
+**Client work:**
+- **[Project Name]** ([N] sessions): [2-3 sentence summary of what was actually built/changed - be specific about features, files, or functionality]
+  - Completed: [specific deliverables, not vague descriptions]
+  - In progress: [specific work items that seem unfinished]
+  - Blockers: [any unresolved issues - highlight these if present]
+
+**Personal projects:**
+- **[Project Name]** ([N] sessions): [2-3 sentence summary]
+  - Completed: [list]
+  - In progress: [list]
+
+**Tools & infrastructure:**
+- **[Project Name]** ([N] sessions): [2-3 sentence summary]
+  - Completed: [list]
+
+**Key completions:** [Bullet list of 3-5 most notable things finished across all projects]
+
+**Still in progress:** [Bullet list of significant unfinished work that may need attention]
+
+**Blockers:** [Any unresolved issues across all chats - surface prominently if present]
+
+If chat_count is 0, display: "No Claude Code chats since last briefing."
+
+## Appendix: Newsletter digest
+[Summary from state/newsletter-digests/YYYY-MM-DD.json]
+
+**[N] newsletters processed** (since last briefing)
+
+### Key facts
+[Top 5-7 facts from aggregated.top_facts, grouped by type]
+
+**Products/tools:**
+- [Fact with significance and source]
+
+**Research:**
+- [Fact with significance and source]
+
+**Funding/organisations:**
+- [Fact with significance and source]
+
+### Key ideas
+[Top 3-5 ideas from aggregated.top_ideas]
+
+- **[Idea type]**: [Content] — *[Source]*
+  - [Source quote if present]
+
+### Relevance to current work
+[From aggregated.mentions_of_current_projects]
+
+- **[Priority/project]**: [What was mentioned, from which newsletter]
+
+### Action items
+[From aggregated.action_items, high urgency first]
+
+- [High urgency] [Content] — *[Source]*
+- [Medium urgency] [Content] — *[Source]*
+
+If newsletter_count is 0, display: "No newsletters since last briefing."
 ```
 
 ### Step 3: Offer actions
@@ -115,6 +218,8 @@ All state files are in `state/`:
 | File | Format | Purpose |
 |------|--------|---------|
 | `briefings.jsonl` | JSONL | Log of briefings delivered |
+| `claude-code-summaries/YYYY-MM-DD.json` | JSON | Daily Claude Code chat digests |
+| `newsletter-digests/YYYY-MM-DD.json` | JSON | Newsletter extraction digests |
 | `friction-log.jsonl` | JSONL | Friction points for pattern detection |
 | `capability-pipeline.jsonl` | JSONL | Ideas for AI capabilities |
 | `delegations.jsonl` | JSONL | Tasks delegated and status |
@@ -150,6 +255,7 @@ The Chief of Staff can invoke or reference these existing skills:
 | `week-review` | Trigger weekly review |
 | `schedule-task` | Schedule overnight automation |
 | `contact-friends` | Relationship reminders |
+| `curate-podcasts` | Daily podcast recommendations |
 
 ## Weekly rhythm
 
@@ -163,6 +269,8 @@ The Chief of Staff can invoke or reference these existing skills:
 - **`/cos`** or **`/chief-of-staff`** - Full morning briefing
 - **`/friction`** - Log a friction point (see `.claude/commands/friction.md`)
 - **`/capability`** - Add to capability pipeline (see `.claude/commands/capability.md`)
+- **`/generate-chat-digest`** - Generate Claude Code chat digest (usually called automatically by `/cos`)
+- **`/generate-newsletter-digest`** - Generate newsletter digest (usually called automatically by `/cos`)
 
 ## Data paths reference
 
@@ -183,14 +291,21 @@ The Chief of Staff can invoke or reference these existing skills:
 ├── daily/YYYY-MM-DD.json            # Daily activity summaries
 └── captures/                        # Raw screenshots (not needed)
 
-/Users/ph/.claude/skills/chief-of-staff/state/
-├── briefings/                       # Daily briefing markdown files
-│   └── YYYY-MM-DD.md
-├── briefings.jsonl                  # Briefing metadata log
-├── friction-log.jsonl
-├── capability-pipeline.jsonl
-├── delegations.jsonl
-└── overnight-results/
+/Users/ph/.claude/skills/chief-of-staff/
+├── interests/
+│   └── interests.md                 # Shared interests (used by newsletter digest, curate-podcasts)
+└── state/
+    ├── briefings/                   # Daily briefing markdown files
+    │   └── YYYY-MM-DD.md
+    ├── briefings.jsonl              # Briefing metadata log
+    ├── claude-code-summaries/       # Daily Claude Code chat digests
+    │   └── YYYY-MM-DD.json
+    ├── newsletter-digests/          # Newsletter extraction digests
+    │   └── YYYY-MM-DD.json
+    ├── friction-log.jsonl
+    ├── capability-pipeline.jsonl
+    ├── delegations.jsonl
+    └── overnight-results/
 ```
 
 ## Activity tracking analysis
@@ -287,7 +402,7 @@ Prioritise high-value, low-effort items as "quick wins".
 
 ### Slack digest (`slack-digest-YYYY-MM-DD.json`)
 
-Generated daily at 7 AM by `/slack-digest`. Contains:
+Generated daily at 8 AM by `/slack-digest`. Contains:
 
 ```json
 {
@@ -299,6 +414,7 @@ Generated daily at 7 AM by `/slack-digest`. Contains:
   },
   "summary": {
     "total_mentions": 3,
+    "unhandled_mentions": 1,
     "total_replies": 2,
     "channels_with_activity": 5,
     "total_messages": 47
@@ -310,7 +426,8 @@ Generated daily at 7 AM by `/slack-digest`. Contains:
       "from": "Alice Smith",
       "text": "Hey @User, can you...",
       "ts": "1737097200.123456",
-      "permalink": "https://..."
+      "permalink": "https://...",
+      "handled": false
     }
   ],
   "replies": [
@@ -339,14 +456,16 @@ Generated daily at 7 AM by `/slack-digest`. Contains:
 ## Overnight results
 
 **Slack digest** (14 hours)
-- [N] mentions: [List who mentioned Peter and in which channel]
+- [N] unhandled mentions: [List who mentioned Peter and in which channel, filtering where handled=false]
 - [N] replies to your messages: [List who replied]
 - Channel activity: [List top 3 channels by message count]
 
-[If any mentions exist, show them with brief context]
+[Only show mentions where handled=false - these need Peter's attention]
 ```
 
-If mentions > 0, these are high priority and should be surfaced prominently.
+**Key:** Only surface mentions where `handled: false`. The `handled` field is `true` if Peter already replied to that thread after the mention, so those don't need action.
+
+If `unhandled_mentions > 0`, these are high priority and should be surfaced prominently.
 If replies > 0, these may need follow-up.
 Channel activity gives context on what's happening but is lower priority.
 
