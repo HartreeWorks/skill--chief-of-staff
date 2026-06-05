@@ -1,0 +1,7 @@
+# macOS
+.DS_Store
+__pycache__/
+
+# Private local data (never published)
+data/
+state/
